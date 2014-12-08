@@ -31,6 +31,7 @@
 #include <spine/Skeleton.h>
 #include <string.h>
 #include <spine/extension.h>
+#include "Skin.h"
 
 typedef struct {
 	spSkeleton super;
@@ -97,6 +98,8 @@ spSkeleton* spSkeleton_create (spSkeletonData* data) {
 
 	spSkeleton_updateCache(self);
 
+    self->rootMotionTransform = spTransform_create(0, 0, 0, 1, 1);
+
 	return self;
 }
 
@@ -122,6 +125,7 @@ void spSkeleton_dispose (spSkeleton* self) {
 	FREE(self->ikConstraints);
 
 	FREE(self->drawOrder);
+    spTransform_dispose(self->rootMotionTransform);
 	FREE(self);
 }
 

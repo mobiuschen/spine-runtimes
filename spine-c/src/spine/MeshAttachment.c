@@ -43,13 +43,13 @@ void _spMeshAttachment_dispose (spAttachment* attachment) {
 	FREE(self);
 }
 
-spMeshAttachment* spMeshAttachment_create (const char* name) {
+spMeshAttachment* spMeshAttachment_create (const char* name, const char* path) {
 	spMeshAttachment* self = NEW(spMeshAttachment);
 	self->r = 1;
 	self->g = 1;
 	self->b = 1;
 	self->a = 1;
-	_spAttachment_init(SUPER(self), name, SP_ATTACHMENT_MESH, _spMeshAttachment_dispose);
+	_spAttachment_init(SUPER(self), name, path, SP_ATTACHMENT_MESH, _spMeshAttachment_dispose);
 	return self;
 }
 

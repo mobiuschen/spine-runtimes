@@ -72,6 +72,8 @@ struct spAtlasPage {
 	void* rendererObject;
 	int width, height;
 
+    int refCount;
+
 	spAtlasPage* next;
 };
 
@@ -150,6 +152,18 @@ void spAtlas_dispose (spAtlas* atlas);
 
 /* Returns 0 if the region was not found. */
 spAtlasRegion* spAtlas_findRegion (const spAtlas* self, const char* name);
+
+int spAtlas_addPageRefByName(const spAtlas* self, const char* name);
+int spAtlas_addPageRef(const spAtlas* self, spAtlasPage* page);
+int spAtlas_minusPageRefByName(spAtlas* self, const char* name);
+int spAtlas_minusPageRef(spAtlas* self, spAtlasPage* page);
+
+int/*boolean*/ spAtlas_addPagesFromData(spAtlas* self, const char* data, int length, const char* dir);
+int/*boolean*/ spAtlas_addPagesFromFile(spAtlas* self, const char* path);
+int/*boolean*/ spAtlas_removePage(spAtlas* self, spAtlasPage* target);
+int/*boolean*/ spAtlas_removePageByName(spAtlas* self, const char* pageName);
+int/*boolean*/ spAtlas_removeRegion(spAtlas* self, spAtlasRegion* target);
+int/*boolean*/ spAtlas_removeRegionByName(spAtlas* self, const char* regionName);
 
 #ifdef SPINE_SHORT_NAMES
 typedef spAtlas Atlas;

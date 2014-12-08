@@ -46,11 +46,9 @@ public:
 	static SkeletonRenderer* createWithFile (const std::string& skeletonDataFile, const std::string& atlasFile, float scale = 1);
 
 	virtual void update (float deltaTime) override;
-	virtual void draw (cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t transformFlags) override;
-	virtual void drawSkeleton (const cocos2d::Mat4& transform, uint32_t transformFlags);
+	virtual void draw (cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, bool transformUpdated) override;
+	virtual void drawSkeleton (const cocos2d::Mat4& transform, bool transformUpdated);
 	virtual cocos2d::Rect getBoundingBox () const override;
-	virtual void onEnter () override;
-	virtual void onExit () override;
 
 	spSkeleton* getSkeleton();
 
@@ -77,8 +75,15 @@ public:
 	
 	/* Sets the skin used to look up attachments not found in the SkeletonData defaultSkin. Attachments from the new skin are
 	 * attached if the corresponding attachment from the old skin was attached. Returns false if the skin was not found.
-	 * @param skin May be 0.*/
-	bool setSkin (const std::string& skinName);
+	 * @param skin May be 0.
+	 * @param cleanOld If sets the skin success, then removes and disposes then old skin.
+	 * */
+	bool setSkin (const std::string& skinName, bool cleanOld = false);
+    const std::string getSkinName();
+    bool hasSkin(const std::string& skinName);
+    bool addSkinWithFile(const std::string& file);
+    bool removeSkinByName(const std::string& skinName);
+    void addAtlasPagesWithFile(const std::string& atlasFile);
 	
 	/* Returns 0 if the slot or attachment was not found. */
 	spAttachment* getAttachment (const std::string& slotName, const std::string& attachmentName) const;

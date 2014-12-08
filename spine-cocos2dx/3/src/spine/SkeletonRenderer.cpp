@@ -33,6 +33,9 @@
 #include <spine/extension.h>
 #include <spine/PolygonBatch.h>
 #include <algorithm>
+#include <iostream>
+#include "SkeletonData.h"
+#include "Skin.h"
 
 USING_NS_CC;
 using std::min;
@@ -71,10 +74,13 @@ void SkeletonRenderer::initialize () {
 	_batch = PolygonBatch::createWithCapacity(2000); // Max number of vertices and triangles per batch.
 	_batch->retain();
 
-	_blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
+    //_blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
+    //用Texture Packer打包素材，没有premultiply_alpha选项，因此要启用这个blendFunc模式
+    _blendFunc = BlendFunc::ALPHA_NON_PREMULTIPLIED;
 	setOpacityModifyRGB(true);
 
 	setGLProgram(ShaderCache::getInstance()->getGLProgram(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR));
+	scheduleUpdate();
 }
 
 void SkeletonRenderer::setSkeletonData (spSkeletonData *skeletonData, bool ownsSkeletonData) {
@@ -131,13 +137,13 @@ void SkeletonRenderer::update (float deltaTime) {
 	spSkeleton_update(_skeleton, deltaTime * _timeScale);
 }
 
-void SkeletonRenderer::draw (Renderer* renderer, const Mat4& transform, uint32_t transformFlags) {
+void SkeletonRenderer::draw (Renderer* renderer, const Mat4& transform, bool transformUpdated) {
 	_drawCommand.init(_globalZOrder);
-	_drawCommand.func = CC_CALLBACK_0(SkeletonRenderer::drawSkeleton, this, transform, transformFlags);
+	_drawCommand.func = CC_CALLBACK_0(SkeletonRenderer::drawSkeleton, this, transform, transformUpdated);
 	renderer->addCommand(&_drawCommand);
 }
 
-void SkeletonRenderer::drawSkeleton (const Mat4 &transform, uint32_t transformFlags) {
+void SkeletonRenderer::drawSkeleton (const Mat4 &transform, bool transformUpdated) {
 	getGLProgramState()->apply(transform);
 
 	Color3B nodeColor = getColor();
@@ -229,6 +235,7 @@ void SkeletonRenderer::drawSkeleton (const Mat4 &transform, uint32_t transformFl
 			glLineWidth(1);
 			Vec2 points[4];
 			V3F_C4B_T2F_Quad quad;
+
 			for (int i = 0, n = _skeleton->slotsCount; i < n; i++) {
 				spSlot* slot = _skeleton->drawOrder[i];
 				if (!slot->attachment || slot->attachment->type != SP_ATTACHMENT_REGION) continue;
@@ -238,6 +245,7 @@ void SkeletonRenderer::drawSkeleton (const Mat4 &transform, uint32_t transformFl
 				points[1] = Vec2(_worldVertices[2], _worldVertices[3]);
 				points[2] = Vec2(_worldVertices[4], _worldVertices[5]);
 				points[3] = Vec2(_worldVertices[6], _worldVertices[7]);
+
 				DrawPrimitives::drawPoly(points, 4, true);
 			}
 		}
@@ -333,15 +341,70 @@ spSlot* SkeletonRenderer::findSlot (const std::string& slotName) const {
 	return spSkeleton_findSlot(_skeleton, slotName.c_str());
 }
 
-bool SkeletonRenderer::setSkin (const std::string& skinName) {
-	return spSkeleton_setSkinByName(_skeleton, skinName.c_str()) ? true : false;
+bool SkeletonRenderer::setSkin (const std::string& skinName, bool cleanOld) {
+    spSkin* oldSkin = _skeleton->skin;
+	bool ret = spSkeleton_setSkinByName(_skeleton, skinName.c_str()) != 0;
+    if (ret && cleanOld && _skeleton->data->defaultSkin != oldSkin) {
+        spSkeletonData_removeSkin(_skeleton->data, oldSkin);
+    }
+    return ret;
+}
+
+const std::string SkeletonRenderer::getSkinName() {
+    return _skeleton->skin ? std::string(_skeleton->skin->name) : std::string();
+}
+
+bool SkeletonRenderer::hasSkin(const std::string& skinName) {
+    return spSkeletonData_findSkin(_skeleton->data, skinName.c_str()) != 0;
+}
+
+void SkeletonRenderer::addAtlasPagesWithFile(const std::string& atlasFile) {
+    spAtlas_addPagesFromFile(_atlas, atlasFile.c_str());
+
+    spAttachmentLoader* attachmentLoader = SUPER(spAtlasAttachmentLoader_create(_atlas));
+
+    int maxAttCount = 0;
+    for(int i = 0, n = _skeleton->data->skinsCount; i < n; i++) {
+        maxAttCount = MAX(_skeleton->data->skins[i]->attachmentCount, maxAttCount);
+    }
+
+    spAttachment** attachments = MALLOC(spAttachment*, maxAttCount * sizeof(spAttachment*));
+    for(int i = 0, n = _skeleton->data->skinsCount; i < n; i++) {
+        spSkin* skin = _skeleton->data->skins[i];
+        int m = spSkin_getAllAttachments(skin, attachments);
+        for(int ii = 0; ii < m; ii++) {
+            spAttachmentLoader_initAttachment(attachmentLoader, attachments[ii]);
+        }
+    }
+    FREE(attachments);
+    spAttachmentLoader_dispose(attachmentLoader);
+}
+
+bool SkeletonRenderer::addSkinWithFile(const std::string& file) {
+    spSkeletonJson* json = spSkeletonJson_create(_atlas);
+    spSkin* skins[500];
+    int newSkinCount = spSkeletonJson_readSkinsFile(json, _skeleton->data, file.c_str(), skins);
+    spSkeletonData_addSkins(_skeleton->data, skins, newSkinCount);
+    spSkeletonJson_dispose(json);
+    return newSkinCount != 0;
+}
+
+bool SkeletonRenderer::removeSkinByName(const std::string& skinName) {
+    //不允许移除当前使用的skin
+    if (strcmp(skinName.c_str(), _skeleton->skin->name) == 0) return false;
+
+    spSkin* skin = spSkeletonData_findSkin(_skeleton->data, skinName.c_str());
+    spAttachmentLoader* attachmentLoader = SUPER(spAtlasAttachmentLoader_create(_atlas));
+    spAttachmentLoader_deinitAttachments(attachmentLoader, skin);
+    spAttachmentLoader_dispose(attachmentLoader);
+    return spSkeletonData_removeSkinByName(_skeleton->data, skinName.c_str()) != 0;
 }
 
 spAttachment* SkeletonRenderer::getAttachment (const std::string& slotName, const std::string& attachmentName) const {
 	return spSkeleton_getAttachmentForSlotName(_skeleton, slotName.c_str(), attachmentName.c_str());
 }
 bool SkeletonRenderer::setAttachment (const std::string& slotName, const std::string& attachmentName) {
-	return spSkeleton_setAttachment(_skeleton, slotName.c_str(), attachmentName.c_str()) ? true : false;
+	return spSkeleton_setAttachment(_skeleton, slotName.c_str(), attachmentName.c_str()) != 0;
 }
 
 spSkeleton* SkeletonRenderer::getSkeleton () {
@@ -367,16 +430,6 @@ void SkeletonRenderer::setDebugBonesEnabled (bool enabled) {
 }
 bool SkeletonRenderer::getDebugBonesEnabled () const {
 	return _debugBones;
-}
-
-void SkeletonRenderer::onEnter () {
-	Node::onEnter();
-	scheduleUpdate();
-}
-
-void SkeletonRenderer::onExit () {
-	Node::onExit();
-	unscheduleUpdate();
 }
 
 // --- CCBlendProtocol

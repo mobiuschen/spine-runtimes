@@ -36,12 +36,13 @@
 #include <spine/SkeletonData.h>
 #include <spine/Atlas.h>
 #include <spine/Animation.h>
+#include "Json.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct spSkeletonJson {
+typedef struct {
 	float scale;
 	spAttachmentLoader* attachmentLoader;
 	const char* const error;
@@ -53,6 +54,9 @@ void spSkeletonJson_dispose (spSkeletonJson* self);
 
 spSkeletonData* spSkeletonJson_readSkeletonData (spSkeletonJson* self, const char* json);
 spSkeletonData* spSkeletonJson_readSkeletonDataFile (spSkeletonJson* self, const char* path);
+
+int spSkeletonJson_readSkinsData(spSkeletonJson* self, spSkeletonData* skeletonData, Json* json, spSkin** returnSkins);
+int spSkeletonJson_readSkinsFile(spSkeletonJson* self, spSkeletonData* skeletonData, const char* path, spSkin** returnSkins);
 
 #ifdef SPINE_SHORT_NAMES
 typedef spSkeletonJson SkeletonJson;

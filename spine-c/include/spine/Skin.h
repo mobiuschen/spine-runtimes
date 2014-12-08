@@ -39,8 +39,9 @@ extern "C" {
 
 struct spSkeleton;
 
-typedef struct spSkin {
+typedef struct {
 	const char* const name;
+    int attachmentCount;
 } spSkin;
 
 spSkin* spSkin_create (const char* name);
@@ -53,6 +54,7 @@ spAttachment* spSkin_getAttachment (const spSkin* self, int slotIndex, const cha
 
 /* Returns 0 if the slot or attachment was not found. */
 const char* spSkin_getAttachmentName (const spSkin* self, int slotIndex, int attachmentIndex);
+const int spSkin_getAllAttachments(const spSkin* self, spAttachment** returnAttachments);
 
 /** Attach each attachment in this skin if the corresponding attachment in oldSkin is currently attached. */
 void spSkin_attachAll (const spSkin* self, struct spSkeleton* skeleton, const spSkin* oldspSkin);

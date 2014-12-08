@@ -64,29 +64,24 @@ void spBone_updateWorldTransform (spBone* self) {
 		}
 		CONST_CAST(float, self->worldRotation) =
 				self->data->inheritRotation ? self->parent->worldRotation + self->rotationIK : self->rotationIK;
-		CONST_CAST(int, self->worldFlipX) = self->parent->worldFlipX ^ self->flipX;
-		CONST_CAST(int, self->worldFlipY) = self->parent->worldFlipY ^ self->flipY;
 	} else {
-		int skeletonFlipX = self->skeleton->flipX, skeletonFlipY = self->skeleton->flipY;
 		CONST_CAST(float, self->worldX) = self->skeleton->flipX ? -self->x : self->x;
 		CONST_CAST(float, self->worldY) = self->skeleton->flipY != yDown ? -self->y : self->y;
 		CONST_CAST(float, self->worldScaleX) = self->scaleX;
 		CONST_CAST(float, self->worldScaleY) = self->scaleY;
 		CONST_CAST(float, self->worldRotation) = self->rotationIK;
-		CONST_CAST(int, self->worldFlipX) = skeletonFlipX ^ self->flipX;
-		CONST_CAST(int, self->worldFlipY) = skeletonFlipY ^ self->flipY;
 	}
 	radians = self->worldRotation * DEG_RAD;
 	cosine = COS(radians);
 	sine = SIN(radians);
-	if (self->worldFlipX) {
+	if (self->skeleton->flipX) {
 		CONST_CAST(float, self->m00) = -cosine * self->worldScaleX;
 		CONST_CAST(float, self->m01) = sine * self->worldScaleY;
 	} else {
 		CONST_CAST(float, self->m00) = cosine * self->worldScaleX;
 		CONST_CAST(float, self->m01) = -sine * self->worldScaleY;
 	}
-	if (self->worldFlipY != yDown) {
+	if (self->skeleton->flipY != yDown) {
 		CONST_CAST(float, self->m10) = -sine * self->worldScaleX;
 		CONST_CAST(float, self->m11) = -cosine * self->worldScaleY;
 	} else {
@@ -102,15 +97,13 @@ void spBone_setToSetupPose (spBone* self) {
 	self->rotationIK = self->rotation;
 	self->scaleX = self->data->scaleX;
 	self->scaleY = self->data->scaleY;
-	self->flipX = self->data->flipX;
-	self->flipY = self->data->flipY;
 }
 
 void spBone_worldToLocal (spBone* self, float worldX, float worldY, float* localX, float* localY) {
 	float invDet;
 	float dx = worldX - self->worldX, dy = worldY - self->worldY;
 	float m00 = self->m00, m11 = self->m11;
-	if (self->worldFlipX != (self->worldFlipY != yDown)) {
+	if (self->skeleton->flipX != (self->skeleton->flipY != yDown)) {
 		m00 *= -1;
 		m11 *= -1;
 	}

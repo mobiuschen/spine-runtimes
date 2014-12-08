@@ -39,11 +39,12 @@
 extern "C" {
 #endif
 
-typedef struct spBoundingBoxAttachment {
+typedef struct spBoundingBoxAttachment spBoundingBoxAttachment;
+struct spBoundingBoxAttachment {
 	spAttachment super;
 	int verticesCount;
 	float* vertices;
-} spBoundingBoxAttachment;
+};
 
 spBoundingBoxAttachment* spBoundingBoxAttachment_create (const char* name);
 void spBoundingBoxAttachment_computeWorldVertices (spBoundingBoxAttachment* self, spBone* bone, float* vertices);

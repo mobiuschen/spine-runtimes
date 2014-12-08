@@ -38,7 +38,7 @@ void _spRegionAttachment_dispose (spAttachment* attachment) {
 	FREE(self);
 }
 
-spRegionAttachment* spRegionAttachment_create (const char* name) {
+spRegionAttachment* spRegionAttachment_create (const char* name, const char* path) {
 	spRegionAttachment* self = NEW(spRegionAttachment);
 	self->scaleX = 1;
 	self->scaleY = 1;
@@ -46,7 +46,7 @@ spRegionAttachment* spRegionAttachment_create (const char* name) {
 	self->g = 1;
 	self->b = 1;
 	self->a = 1;
-	_spAttachment_init(SUPER(self), name, SP_ATTACHMENT_REGION, _spRegionAttachment_dispose);
+	_spAttachment_init(SUPER(self), name, path, SP_ATTACHMENT_REGION, _spRegionAttachment_dispose);
 	return self;
 }
 
@@ -97,6 +97,13 @@ void spRegionAttachment_updateOffset (spRegionAttachment* self) {
 	self->offset[SP_VERTEX_Y3] = localY2Cos + localX2Sin;
 	self->offset[SP_VERTEX_X4] = localX2Cos - localYSin;
 	self->offset[SP_VERTEX_Y4] = localYCos + localX2Sin;
+}
+
+void spRegionAttachment_contentSize (spRegionAttachment* self, spRect* result) {
+    result->x = self->x;
+    result->y = self->y;
+    result->width = self->width;
+    result->height = self->height;
 }
 
 void spRegionAttachment_computeWorldVertices (spRegionAttachment* self, spBone* bone, float* vertices) {

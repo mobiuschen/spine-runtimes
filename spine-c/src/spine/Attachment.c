@@ -36,13 +36,14 @@ typedef struct _spAttachmentVtable {
 	void (*dispose) (spAttachment* self);
 } _spAttachmentVtable;
 
-void _spAttachment_init (spAttachment* self, const char* name, spAttachmentType type, /**/
+void _spAttachment_init (spAttachment* self, const char* name, const char* path, spAttachmentType type, /**/
 		void (*dispose) (spAttachment* self)) {
 
 	CONST_CAST(_spAttachmentVtable*, self->vtable) = NEW(_spAttachmentVtable);
 	VTABLE(spAttachment, self) ->dispose = dispose;
 
-	MALLOC_STR(self->name, name);
+    MALLOC_STR(self->name, name);
+    MALLOC_STR(self->path, path);
 	CONST_CAST(spAttachmentType, self->type) = type;
 }
 

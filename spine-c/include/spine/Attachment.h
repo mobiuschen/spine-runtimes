@@ -35,16 +35,20 @@
 extern "C" {
 #endif
 
+struct spSlot;
+
 typedef enum {
 	SP_ATTACHMENT_REGION, SP_ATTACHMENT_BOUNDING_BOX, SP_ATTACHMENT_MESH, SP_ATTACHMENT_SKINNED_MESH
 } spAttachmentType;
 
-typedef struct spAttachment {
+typedef struct spAttachment spAttachment;
+struct spAttachment {
 	const char* const name;
+    const char* const path;
 	const spAttachmentType type;
 
 	const void* const vtable;
-} spAttachment;
+};
 
 void spAttachment_dispose (spAttachment* self);
 

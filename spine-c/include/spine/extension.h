@@ -124,7 +124,7 @@ char* _readFile (const char* path, int* length);
 
 /**/
 
-typedef struct _spAnimationState {
+typedef struct {
 	spAnimationState super;
 	spEvent** events;
 
@@ -138,9 +138,10 @@ void _spTrackEntry_dispose (spTrackEntry* self);
 /**/
 
 void _spAttachmentLoader_init (spAttachmentLoader* self, /**/
-void (*dispose) (spAttachmentLoader* self), /**/
-		spAttachment* (*newAttachment) (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name,
-				const char* path));
+        void (*dispose) (spAttachmentLoader* self), /**/
+		spAttachment* (*newAttachment) (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name, const char* path),
+        int (*initAttachment) (spAttachmentLoader* self, spAttachment* target),
+        int (*deinitAttachments) (spAttachmentLoader* self, spSkin* skin));
 void _spAttachmentLoader_deinit (spAttachmentLoader* self);
 void _spAttachmentLoader_setError (spAttachmentLoader* self, const char* error1, const char* error2);
 void _spAttachmentLoader_setUnknownTypeError (spAttachmentLoader* self, spAttachmentType type);
@@ -154,7 +155,7 @@ void _spAttachmentLoader_setUnknownTypeError (spAttachmentLoader* self, spAttach
 
 /**/
 
-void _spAttachment_init (spAttachment* self, const char* name, spAttachmentType type, /**/
+void _spAttachment_init (spAttachment* self, const char* name, const char* path, spAttachmentType type, /**/
 void (*dispose) (spAttachment* self));
 void _spAttachment_deinit (spAttachment* self);
 

@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-typedef struct spAnimationStateData {
+typedef struct {
 	spSkeletonData* const skeletonData;
 	float defaultMix;
 	const void* const entries;

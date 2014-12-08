@@ -33,19 +33,25 @@
 #include <spine/extension.h>
 
 typedef struct _spAttachmentLoaderVtable {
-	spAttachment* (*newAttachment) (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name,
-			const char* path);
+	spAttachment* (*newAttachment) (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name, const char* path);
+    int (*initAttachment) (spAttachmentLoader* self, spAttachment* target);
+    int (*deinitAttachments) (spAttachmentLoader* self, spSkin* skin);
 	void (*dispose) (spAttachmentLoader* self);
 } _spAttachmentLoaderVtable;
 
-void _spAttachmentLoader_init (spAttachmentLoader* self, /**/
-void (*dispose) (spAttachmentLoader* self), /**/
-		spAttachment* (*newAttachment) (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name,
-				const char* path)) {
+void _spAttachmentLoader_init (
+        spAttachmentLoader* self, /**/
+        void (*dispose) (spAttachmentLoader* self), /**/
+		spAttachment* (*newAttachment) (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name, const char* path),
+        int (*initAttachment) (spAttachmentLoader* self, spAttachment* target),
+        int (*deinitAttachments) (spAttachmentLoader* self, spSkin* skin)) {
 	CONST_CAST(_spAttachmentLoaderVtable*, self->vtable) = NEW(_spAttachmentLoaderVtable);
 	VTABLE(spAttachmentLoader, self)->dispose = dispose;
-	VTABLE(spAttachmentLoader, self)->newAttachment = newAttachment;
+    VTABLE(spAttachmentLoader, self)->newAttachment = newAttachment;
+    VTABLE(spAttachmentLoader, self)->initAttachment = initAttachment;
+    VTABLE(spAttachmentLoader, self)->deinitAttachments = deinitAttachments;
 }
+
 
 void _spAttachmentLoader_deinit (spAttachmentLoader* self) {
 	FREE(self->vtable);
@@ -65,6 +71,24 @@ spAttachment* spAttachmentLoader_newAttachment (spAttachmentLoader* self, spSkin
 	self->error1 = 0;
 	self->error2 = 0;
 	return VTABLE(spAttachmentLoader, self)->newAttachment(self, skin, type, name, path);
+}
+
+
+int spAttachmentLoader_initAttachment (spAttachmentLoader* self, spAttachment* target) {
+    FREE(self->error1);
+    FREE(self->error2);
+    self->error1 = 0;
+    self->error2 = 0;
+    return VTABLE(spAttachmentLoader, self)->initAttachment(self, target);
+}
+
+
+int spAttachmentLoader_deinitAttachments (spAttachmentLoader* self, spSkin* skin) {
+    FREE(self->error1);
+    FREE(self->error2);
+    self->error1 = 0;
+    self->error2 = 0;
+    return VTABLE(spAttachmentLoader, self)->deinitAttachments(self, skin);
 }
 
 void _spAttachmentLoader_setError (spAttachmentLoader* self, const char* error1, const char* error2) {

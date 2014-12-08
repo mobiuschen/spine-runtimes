@@ -38,7 +38,8 @@
 extern "C" {
 #endif
 
-typedef struct spAttachmentLoader {
+typedef struct spAttachmentLoader spAttachmentLoader;
+struct spAttachmentLoader {
 	const char* error1;
 	const char* error2;
 
@@ -50,13 +51,14 @@ typedef struct spAttachmentLoader {
 					vtable(0) {
 	}
 #endif
-} spAttachmentLoader;
+};
 
 void spAttachmentLoader_dispose (spAttachmentLoader* self);
 
 /* Returns 0 to not load an attachment. If 0 is returned and spAttachmentLoader.error1 is set, an error occurred. */
-spAttachment* spAttachmentLoader_newAttachment (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name,
-		const char* path);
+spAttachment* spAttachmentLoader_newAttachment (spAttachmentLoader* self, spSkin* skin, spAttachmentType type, const char* name, const char* path);
+int spAttachmentLoader_initAttachment (spAttachmentLoader* self, spAttachment* target);
+int spAttachmentLoader_deinitAttachments (spAttachmentLoader* self, spSkin* skin);
 
 #ifdef SPINE_SHORT_NAMES
 typedef spAttachmentLoader AttachmentLoader;

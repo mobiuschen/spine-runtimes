@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-typedef struct spAtlasAttachmentLoader {
+typedef struct {
 	spAttachmentLoader super;
 	spAtlas* atlas;
 } spAtlasAttachmentLoader;

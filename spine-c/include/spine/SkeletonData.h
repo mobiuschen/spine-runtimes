@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-typedef struct spSkeletonData {
+typedef struct {
 	const char* version;
 	const char* hash;
 	float width, height;
@@ -83,6 +83,10 @@ spEventData* spSkeletonData_findEvent (const spSkeletonData* self, const char* e
 spAnimation* spSkeletonData_findAnimation (const spSkeletonData* self, const char* animationName);
 
 spIkConstraintData* spSkeletonData_findIkConstraint (const spSkeletonData* self, const char* ikConstraintName);
+
+int/*boolean*/ spSkeletonData_addSkins(spSkeletonData* self, spSkin** skins, int count);
+int/*boolean*/ spSkeletonData_removeSkin(spSkeletonData* self, spSkin* skin);
+int/*boolean*/ spSkeletonData_removeSkinByName(spSkeletonData* self, const char* skinName);
 
 #ifdef SPINE_SHORT_NAMES
 typedef spSkeletonData SkeletonData;

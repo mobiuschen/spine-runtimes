@@ -31,6 +31,8 @@
 #include <spine/SkeletonData.h>
 #include <string.h>
 #include <spine/extension.h>
+#include "SkeletonData.h"
+#include "Skin.h"
 
 spSkeletonData* spSkeletonData_create () {
 	return NEW(spSkeletonData);
@@ -61,9 +63,6 @@ void spSkeletonData_dispose (spSkeletonData* self) {
 	for (i = 0; i < self->ikConstraintsCount; ++i)
 		spIkConstraintData_dispose(self->ikConstraints[i]);
 	FREE(self->ikConstraints);
-
-	FREE(self->hash);
-	FREE(self->version);
 
 	FREE(self);
 }
@@ -122,4 +121,73 @@ spIkConstraintData* spSkeletonData_findIkConstraint (const spSkeletonData* self,
 	for (i = 0; i < self->ikConstraintsCount; ++i)
 		if (strcmp(self->ikConstraints[i]->name, ikConstraintName) == 0) return self->ikConstraints[i];
 	return 0;
+}
+
+int/*boolean*/ spSkeletonData_addSkins(spSkeletonData* self, spSkin** skins, int count) {
+	spSkin** newArr;
+    int i, ii, addCount;
+    spSkin** toAddSkins;
+    if (count == 0) return 0;
+
+    //检测同名skin，同名skin不会被添加
+    toAddSkins = MALLOC(spSkin*, count * sizeof(spSkin*));
+    addCount = 0;
+    for(i = 0; i < count; i++) {
+        int flg = 0;
+        for(ii = 0; ii < self->skinsCount; ii++) {
+            if (strcmp(skins[i]->name, self->skins[ii]->name) == 0) {
+                flg = 1;
+                break;
+            }
+        }
+        if(!flg) toAddSkins[addCount++] = skins[i];
+    }
+
+    if (addCount == 0) {
+        FREE(toAddSkins);
+        return 0;
+    }
+
+    newArr = MALLOC(spSkin*, self->skinsCount + addCount);
+    if (self->skinsCount > 0) {
+        memcpy(newArr, self->skins, self->skinsCount * sizeof(spSkin*));
+        FREE(self->skins);
+    }
+    memcpy(newArr + self->skinsCount, toAddSkins, addCount * sizeof(spSkin*));
+    (self->skinsCount) += addCount;
+    self->skins = newArr;
+    FREE(toAddSkins);
+    return 1;
+}
+
+int/*boolean*/ spSkeletonData_removeSkin(spSkeletonData* self, spSkin* skin) {
+    int i = 0, n = self->skinsCount, findFlg = 0;
+
+    for(; i < n; i++) {
+        if (self->skins[i] == skin) {
+            findFlg = 1;
+            break;
+        }
+    }
+
+    if (findFlg) {
+        spSkin** newArr = MALLOC(spSkin*, n - 1);
+        if (i > 0) memcpy(newArr, self->skins, i * sizeof(spSkin*));
+        if (i < self->skinsCount) memcpy(newArr + i, self->skins + i + 1, (n-i-1) * sizeof(spSkin*));
+        (self->skinsCount)--;
+        FREE(self->skins);
+        self->skins = newArr;
+        spSkin_dispose(skin);
+    }
+
+    return findFlg;
+}
+
+int/*boolean*/ spSkeletonData_removeSkinByName(spSkeletonData* self, const char* skinName) {
+    int i = 0, n = self->skinsCount;
+    for(; i < n; i++) {
+        if (strcmp(skinName, self->skins[i]->name) == 0)
+            return spSkeletonData_removeSkin(self, self->skins[i]);
+    }
+    return 0;
 }

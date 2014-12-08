@@ -43,7 +43,6 @@ struct spBoneData {
 	float x, y;
 	float rotation;
 	float scaleX, scaleY;
-	int/*bool*/flipX, flipY;
 	int/*bool*/inheritScale, inheritRotation;
 };
 

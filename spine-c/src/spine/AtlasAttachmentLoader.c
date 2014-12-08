@@ -31,83 +31,153 @@
 #include <spine/AtlasAttachmentLoader.h>
 #include <spine/extension.h>
 
-spAttachment* _spAtlasAttachmentLoader_newAttachment (spAttachmentLoader* loader, spSkin* skin, spAttachmentType type,
-		const char* name, const char* path) {
-	spAtlasAttachmentLoader* self = SUB_CAST(spAtlasAttachmentLoader, loader);
+spAttachment* _spAtlasAttachmentLoader_newAttachment (spAttachmentLoader* loader, spSkin* skin, spAttachmentType type, const char* name, const char* path) {
 	switch (type) {
 	case SP_ATTACHMENT_REGION: {
-		spRegionAttachment* attachment;
-		spAtlasRegion* region = spAtlas_findRegion(self->atlas, path);
-		if (!region) {
-			_spAttachmentLoader_setError(loader, "Region not found: ", path);
-			return 0;
-		}
-		attachment = spRegionAttachment_create(name);
-		attachment->rendererObject = region;
-		spRegionAttachment_setUVs(attachment, region->u, region->v, region->u2, region->v2, region->rotate);
-		attachment->regionOffsetX = region->offsetX;
-		attachment->regionOffsetY = region->offsetY;
-		attachment->regionWidth = region->width;
-		attachment->regionHeight = region->height;
-		attachment->regionOriginalWidth = region->originalWidth;
-		attachment->regionOriginalHeight = region->originalHeight;
+		spRegionAttachment* attachment = spRegionAttachment_create(name, path);
 		return SUPER(attachment);
 	}
 	case SP_ATTACHMENT_MESH: {
-		spMeshAttachment* attachment;
-		spAtlasRegion* region = spAtlas_findRegion(self->atlas, path);
-		if (!region) {
-			_spAttachmentLoader_setError(loader, "Region not found: ", path);
-			return 0;
-		}
-		attachment = spMeshAttachment_create(name);
-		attachment->rendererObject = region;
-		attachment->regionU = region->u;
-		attachment->regionV = region->v;
-		attachment->regionU2 = region->u2;
-		attachment->regionV2 = region->v2;
-		attachment->regionRotate = region->rotate;
-		attachment->regionOffsetX = region->offsetX;
-		attachment->regionOffsetY = region->offsetY;
-		attachment->regionWidth = region->width;
-		attachment->regionHeight = region->height;
-		attachment->regionOriginalWidth = region->originalWidth;
-		attachment->regionOriginalHeight = region->originalHeight;
+		spMeshAttachment* attachment = spMeshAttachment_create(name, path);
 		return SUPER(attachment);
 	}
 	case SP_ATTACHMENT_SKINNED_MESH: {
-		spSkinnedMeshAttachment* attachment;
-		spAtlasRegion* region = spAtlas_findRegion(self->atlas, path);
-		if (!region) {
-			_spAttachmentLoader_setError(loader, "Region not found: ", path);
-			return 0;
-		}
-		attachment = spSkinnedMeshAttachment_create(name);
-		attachment->rendererObject = region;
-		attachment->regionU = region->u;
-		attachment->regionV = region->v;
-		attachment->regionU2 = region->u2;
-		attachment->regionV2 = region->v2;
-		attachment->regionRotate = region->rotate;
-		attachment->regionOffsetX = region->offsetX;
-		attachment->regionOffsetY = region->offsetY;
-		attachment->regionWidth = region->width;
-		attachment->regionHeight = region->height;
-		attachment->regionOriginalWidth = region->originalWidth;
-		attachment->regionOriginalHeight = region->originalHeight;
+		spSkinnedMeshAttachment* attachment = spSkinnedMeshAttachment_create(name, path);
 		return SUPER(attachment);
 	}
 	case SP_ATTACHMENT_BOUNDING_BOX:
-		return SUPER(spBoundingBoxAttachment_create(name));
+        return SUPER(spBoundingBoxAttachment_create(name));
 	default:
 		_spAttachmentLoader_setUnknownTypeError(loader, type);
 		return 0;
 	}
 }
 
+int _spAtlasAttachmentLoader_initAttachment (spAttachmentLoader* loader, spAttachment* target) {
+    spAtlasAttachmentLoader* self = SUB_CAST(spAtlasAttachmentLoader, loader);
+    switch (target->type) {
+        case SP_ATTACHMENT_REGION: {
+            spRegionAttachment* attachment = SUB_CAST(spRegionAttachment, target);
+            if (!attachment->rendererObject) {
+                spAtlasRegion* region = spAtlas_findRegion(self->atlas, target->path);
+                if (!region) return 0;
+
+                spAtlas_addPageRef(self->atlas, region->page);
+                attachment->rendererObject = region;
+                spRegionAttachment_setUVs(attachment, region->u, region->v, region->u2, region->v2, region->rotate);
+                attachment->regionOffsetX = region->offsetX;
+                attachment->regionOffsetY = region->offsetY;
+                attachment->regionWidth = region->width;
+                attachment->regionHeight = region->height;
+                attachment->regionOriginalWidth = region->originalWidth;
+                attachment->regionOriginalHeight = region->originalHeight;
+            }
+
+            spRegionAttachment_updateOffset(attachment);
+            return 1;
+        }
+        case SP_ATTACHMENT_MESH: {
+            spMeshAttachment* attachment = SUB_CAST(spMeshAttachment, target);
+            if (!attachment->rendererObject) {
+                spAtlasRegion* region = spAtlas_findRegion(self->atlas, target->path);
+                if (!region) return 0;
+
+                spAtlas_addPageRef(self->atlas, region->page);
+                attachment->rendererObject = region;
+                attachment->regionU = region->u;
+                attachment->regionV = region->v;
+                attachment->regionU2 = region->u2;
+                attachment->regionV2 = region->v2;
+                attachment->regionRotate = region->rotate;
+                attachment->regionOffsetX = region->offsetX;
+                attachment->regionOffsetY = region->offsetY;
+                attachment->regionWidth = region->width;
+                attachment->regionHeight = region->height;
+                attachment->regionOriginalWidth = region->originalWidth;
+                attachment->regionOriginalHeight = region->originalHeight;
+            }
+
+            spMeshAttachment_updateUVs(attachment);
+            return 1;
+        }
+        case SP_ATTACHMENT_SKINNED_MESH: {
+            spSkinnedMeshAttachment* attachment = SUB_CAST(spSkinnedMeshAttachment, target);
+            if (attachment->rendererObject) {
+                spAtlasRegion* region = spAtlas_findRegion(self->atlas, target->path);
+                if (!region) return 0;
+
+                spAtlas_addPageRef(self->atlas, region->page);
+                attachment->rendererObject = region;
+                attachment->regionU = region->u;
+                attachment->regionV = region->v;
+                attachment->regionU2 = region->u2;
+                attachment->regionV2 = region->v2;
+                attachment->regionRotate = region->rotate;
+                attachment->regionOffsetX = region->offsetX;
+                attachment->regionOffsetY = region->offsetY;
+                attachment->regionWidth = region->width;
+                attachment->regionHeight = region->height;
+                attachment->regionOriginalWidth = region->originalWidth;
+                attachment->regionOriginalHeight = region->originalHeight;
+            }
+
+            spSkinnedMeshAttachment_updateUVs(attachment);
+            return 1;
+        }
+        case SP_ATTACHMENT_BOUNDING_BOX:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int _spAtlasAttachmentLoader_deinitAttachments (spAttachmentLoader* loader, spSkin* skin) {
+    spAtlasAttachmentLoader* self = SUB_CAST(spAtlasAttachmentLoader, loader);
+    spAttachment** attachments = MALLOC(spAttachment*, skin->attachmentCount);
+    int count = spSkin_getAllAttachments(skin, attachments);
+    int i;
+    for(i = 0; i < count; i++) {
+        spAttachment* attachment = attachments[i];
+        switch(attachment->type) {
+            case SP_ATTACHMENT_REGION: {
+                spRegionAttachment* regionAttachment = SUB_CAST(spRegionAttachment, attachment);
+                spAtlasRegion* region = regionAttachment->rendererObject;
+                if (region) spAtlas_minusPageRef(self->atlas, region->page);
+                break;
+            }
+            case SP_ATTACHMENT_MESH: {
+                spMeshAttachment* meshAttachment = SUB_CAST(spMeshAttachment, attachment);
+                spAtlasRegion* region = meshAttachment->rendererObject;
+                if (region) spAtlas_minusPageRef(self->atlas, region->page);
+                break;
+            }
+            case SP_ATTACHMENT_SKINNED_MESH: {
+                spSkinnedMeshAttachment* skinnedMeshAttachment = SUB_CAST(spSkinnedMeshAttachment, attachment);
+                spAtlasRegion* region = skinnedMeshAttachment->rendererObject;
+                if (region) spAtlas_minusPageRef(self->atlas, region->page);
+                break;
+            }
+            case SP_ATTACHMENT_BOUNDING_BOX:
+                break;
+            default:
+                _spAttachmentLoader_setUnknownTypeError(loader, attachment->type);
+				FREE(attachments);
+                return 0;
+        }//switch
+    }//for
+	FREE(attachments);
+    return 1;
+}
+
 spAtlasAttachmentLoader* spAtlasAttachmentLoader_create (spAtlas* atlas) {
 	spAtlasAttachmentLoader* self = NEW(spAtlasAttachmentLoader);
-	_spAttachmentLoader_init(SUPER(self), _spAttachmentLoader_deinit, _spAtlasAttachmentLoader_newAttachment);
+	_spAttachmentLoader_init(
+            SUPER(self),
+            _spAttachmentLoader_deinit,
+            _spAtlasAttachmentLoader_newAttachment,
+            _spAtlasAttachmentLoader_initAttachment,
+            _spAtlasAttachmentLoader_deinitAttachments
+    );
 	self->atlas = atlas;
 	return self;
 }

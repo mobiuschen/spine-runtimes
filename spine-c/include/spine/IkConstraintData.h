@@ -37,7 +37,8 @@
 extern "C" {
 #endif
 
-typedef struct spIkConstraintData {
+typedef struct spIkConstraintData spIkConstraintData;
+struct spIkConstraintData {
 	const char* const name;
 	
 	int bonesCount;
@@ -46,7 +47,7 @@ typedef struct spIkConstraintData {
 	spBoneData* target;
 	int bendDirection;
 	float mix;
-} spIkConstraintData;
+};
 
 spIkConstraintData* spIkConstraintData_create (const char* name);
 void spIkConstraintData_dispose (spIkConstraintData* self);

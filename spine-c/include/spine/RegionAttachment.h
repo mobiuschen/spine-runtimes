@@ -34,6 +34,7 @@
 #include <spine/Attachment.h>
 #include <spine/Atlas.h>
 #include <spine/Slot.h>
+#include <spine/Geometry.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +44,8 @@ typedef enum {
 	SP_VERTEX_X1 = 0, SP_VERTEX_Y1, SP_VERTEX_X2, SP_VERTEX_Y2, SP_VERTEX_X3, SP_VERTEX_Y3, SP_VERTEX_X4, SP_VERTEX_Y4
 } spVertexIndex;
 
-typedef struct spRegionAttachment {
+typedef struct spRegionAttachment spRegionAttachment;
+struct spRegionAttachment {
 	spAttachment super;
 	const char* path;
 	float x, y, scaleX, scaleY, rotation, width, height;
@@ -56,12 +58,13 @@ typedef struct spRegionAttachment {
 
 	float offset[8];
 	float uvs[8];
-} spRegionAttachment;
+};
 
-spRegionAttachment* spRegionAttachment_create (const char* name);
+spRegionAttachment* spRegionAttachment_create (const char* name, const char* path);
 void spRegionAttachment_setUVs (spRegionAttachment* self, float u, float v, float u2, float v2, int/*bool*/rotate);
 void spRegionAttachment_updateOffset (spRegionAttachment* self);
 void spRegionAttachment_computeWorldVertices (spRegionAttachment* self, spBone* bone, float* vertices);
+void spRegionAttachment_contentSize (spRegionAttachment* self, spRect* result);
 
 #ifdef SPINE_SHORT_NAMES
 typedef spVertexIndex VertexIndex;

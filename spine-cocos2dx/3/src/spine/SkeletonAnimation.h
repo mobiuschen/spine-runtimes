@@ -55,11 +55,12 @@ public:
 	void setAnimationStateData (spAnimationStateData* stateData);
 	void setMix (const std::string& fromAnimation, const std::string& toAnimation, float duration);
 
-	spTrackEntry* setAnimation (int trackIndex, const std::string& name, bool loop);
-	spTrackEntry* addAnimation (int trackIndex, const std::string& name, bool loop, float delay = 0);
+	spTrackEntry* setAnimation (int trackIndex, const std::string& name, bool loop, bool rootMotion = false);
+    spTrackEntry* addAnimation (int trackIndex, const std::string& name, bool loop, float delay = 0, bool rootMotion = false);
 	spTrackEntry* getCurrent (int trackIndex = 0);
 	void clearTracks ();
 	void clearTrack (int trackIndex = 0);
+
 
 	void setStartListener (const StartListener& listener);
 	void setEndListener (const EndListener& listener);
@@ -76,6 +77,13 @@ public:
 
 	spAnimationState* getState() const;
 
+    float getAnimationDuration(const std::string& name);
+    void pauseAnimation();
+    void resumeAnimation();
+    bool isPlaying(){return _isPlaying;}
+
+
+    const cocos2d::Vec2 getBoneWorldPosition(const std::string& boneName);
 protected:
 	SkeletonAnimation ();
 	SkeletonAnimation (spSkeletonData* skeletonData);
@@ -92,6 +100,9 @@ protected:
 	EndListener _endListener;
 	CompleteListener _completeListener;
 	EventListener _eventListener;
+
+    spTransform* _animStartTransform;
+    bool _isPlaying;
 
 private:
 	typedef SkeletonRenderer super;

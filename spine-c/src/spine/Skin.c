@@ -30,6 +30,7 @@
 
 #include <spine/Skin.h>
 #include <spine/extension.h>
+#include "Skin.h"
 
 typedef struct _Entry _Entry;
 struct _Entry {
@@ -82,6 +83,7 @@ void spSkin_addAttachment (spSkin* self, int slotIndex, const char* name, spAtta
 	_Entry* newEntry = _Entry_create(slotIndex, name, attachment);
 	newEntry->next = SUB_CAST(_spSkin, self)->entries;
 	SUB_CAST(_spSkin, self)->entries = newEntry;
+    self->attachmentCount++;
 }
 
 spAttachment* spSkin_getAttachment (const spSkin* self, int slotIndex, const char* name) {
@@ -116,4 +118,16 @@ void spSkin_attachAll (const spSkin* self, spSkeleton* skeleton, const spSkin* o
 		}
 		entry = entry->next;
 	}
+}
+
+const int spSkin_getAllAttachments(const spSkin* skin, spAttachment** returnAttachments) {
+    _spSkin* self = SUB_CAST(_spSkin, skin);
+    _Entry* entry = self->entries;
+    int count = 0;
+    while(entry) {
+        returnAttachments[count++] = entry->attachment;
+        entry = entry->next;
+    }
+
+    return count;
 }

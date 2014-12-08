@@ -44,13 +44,13 @@ void _spSkinnedMeshAttachment_dispose (spAttachment* attachment) {
 	FREE(self);
 }
 
-spSkinnedMeshAttachment* spSkinnedMeshAttachment_create (const char* name) {
+spSkinnedMeshAttachment* spSkinnedMeshAttachment_create (const char* name, const char* path) {
 	spSkinnedMeshAttachment* self = NEW(spSkinnedMeshAttachment);
 	self->r = 1;
 	self->g = 1;
 	self->b = 1;
 	self->a = 1;
-	_spAttachment_init(SUPER(self), name, SP_ATTACHMENT_SKINNED_MESH, _spSkinnedMeshAttachment_dispose);
+	_spAttachment_init(SUPER(self), name, path, SP_ATTACHMENT_SKINNED_MESH, _spSkinnedMeshAttachment_dispose);
 	return self;
 }
 

@@ -32,6 +32,7 @@
 #include <spine/spine-cocos2dx.h>
 #include <spine/extension.h>
 #include <algorithm>
+#include "Animation.h"
 
 USING_NS_CC;
 using std::min;
@@ -94,13 +95,11 @@ void SkeletonAnimation::initialize () {
 	_state->rendererObject = this;
 	_state->listener = animationCallback;
 
-	_spAnimationState* stateInternal = (_spAnimationState*)_state;
-	stateInternal->disposeTrackEntry = disposeTrackEntry;
-}
+    _isPlaying = true;
 
-SkeletonAnimation::SkeletonAnimation ()
-		: SkeletonRenderer() {
-	initialize();
+	_spAnimationState* stateInternal = (_spAnimationState*)_state;
+    stateInternal->disposeTrackEntry = disposeTrackEntry;
+    _animStartTransform = spTransform_create_default();
 }
 
 SkeletonAnimation::SkeletonAnimation (spSkeletonData *skeletonData)
@@ -121,15 +120,35 @@ SkeletonAnimation::SkeletonAnimation (const std::string& skeletonDataFile, const
 SkeletonAnimation::~SkeletonAnimation () {
 	if (_ownsAnimationStateData) spAnimationStateData_dispose(_state->data);
 	spAnimationState_dispose(_state);
+    spTransform_dispose(_animStartTransform);
 }
 
 void SkeletonAnimation::update (float deltaTime) {
+    if(!_isPlaying)
+    {
+        deltaTime = 0;
+    }
+
 	super::update(deltaTime);
 
 	deltaTime *= _timeScale;
 	spAnimationState_update(_state, deltaTime);
 	spAnimationState_apply(_state, _skeleton);
-	spSkeleton_updateWorldTransform(_skeleton);
+    spSkeleton_updateWorldTransform(_skeleton);
+
+    spTrackEntry* te = getCurrent(0);
+    if(te != nullptr && te->animation->rootMotionEnabled)
+    {
+        spTransform* transform = _skeleton->rootMotionTransform;
+        transform->x += _animStartTransform->x;
+        transform->y += _animStartTransform->y;
+        transform->rotation += _animStartTransform->rotation;
+        transform->scaleX *= _animStartTransform->scaleX;
+        transform->scaleY *= _animStartTransform->scaleY;
+        this->setPosition(transform->x, transform->y);
+        this->setScale(transform->scaleX, transform->scaleY);
+        this->setRotation(transform->rotation);
+    }
 }
 
 void SkeletonAnimation::setAnimationStateData (spAnimationStateData* stateData) {
@@ -148,26 +167,34 @@ void SkeletonAnimation::setMix (const std::string& fromAnimation, const std::str
 	spAnimationStateData_setMixByName(_state->data, fromAnimation.c_str(), toAnimation.c_str(), duration);
 }
 
-spTrackEntry* SkeletonAnimation::setAnimation (int trackIndex, const std::string& name, bool loop) {
+spTrackEntry* SkeletonAnimation::setAnimation (int trackIndex, const std::string& name, bool loop, bool rootMotion) {
 	spAnimation* animation = spSkeletonData_findAnimation(_skeleton->data, name.c_str());
 	if (!animation) {
 		log("Spine: Animation not found: %s", name.c_str());
 		return 0;
 	}
+    animation->rootMotionEnabled = rootMotion ? 1 : 0;
 	return spAnimationState_setAnimation(_state, trackIndex, animation, loop);
 }
 
-spTrackEntry* SkeletonAnimation::addAnimation (int trackIndex, const std::string& name, bool loop, float delay) {
-	spAnimation* animation = spSkeletonData_findAnimation(_skeleton->data, name.c_str());
-	if (!animation) {
-		log("Spine: Animation not found: %s", name.c_str());
-		return 0;
-	}
-	return spAnimationState_addAnimation(_state, trackIndex, animation, loop, delay);
+
+spTrackEntry* SkeletonAnimation::addAnimation (int trackIndex, const std::string& name, bool loop, float delay, bool rootMotion) {
+    spAnimation* animation = spSkeletonData_findAnimation(_skeleton->data, name.c_str());
+    if (!animation) {
+        log("Spine: Animation not found: %s", name.c_str());
+        return 0;
+    }
+    animation->rootMotionEnabled = rootMotion ? 1 : 0;
+    return spAnimationState_addAnimation(_state, trackIndex, animation, loop, delay);
 }
 
 spTrackEntry* SkeletonAnimation::getCurrent (int trackIndex) { 
 	return spAnimationState_getCurrent(_state, trackIndex);
+}
+
+float SkeletonAnimation::getAnimationDuration(const std::string &name)
+{
+    return spSkeletonData_findAnimation(_skeleton->data, name.c_str())->duration;
 }
 
 void SkeletonAnimation::clearTracks () {
@@ -178,9 +205,25 @@ void SkeletonAnimation::clearTrack (int trackIndex) {
 	spAnimationState_clearTrack(_state, trackIndex);
 }
 
+
+void SkeletonAnimation::pauseAnimation(){ _isPlaying = false;}
+
+
+void SkeletonAnimation::resumeAnimation(){ _isPlaying = true;}
+
+const cocos2d::Vec2 SkeletonAnimation::getBoneWorldPosition(const std::string& boneName)
+{
+    spBone* b = findBone(boneName);
+    return cocos2d::Vec2(b->worldX, b->worldY);
+}
+
+
+
+
 void SkeletonAnimation::onAnimationStateEvent (int trackIndex, spEventType type, spEvent* event, int loopCount) {
 	switch (type) {
 	case SP_ANIMATION_START:
+        spTransform_set_values(_animStartTransform, getPositionX(), getPositionY(), getRotation(), getScaleX(), getScaleY());
 		if (_startListener) _startListener(trackIndex);
 		break;
 	case SP_ANIMATION_END:
